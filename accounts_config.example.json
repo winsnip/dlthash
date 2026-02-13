@@ -1,0 +1,45 @@
+{
+  "accounts": [
+    {
+      "name": "Account 1",
+      "token": "s%3A...your_token_here...",
+      "proxy": {
+        "enabled": false,
+        "host": "",
+        "port": 0,
+        "username": "",
+        "password": ""
+      }
+    },
+    {
+      "name": "Account 2",
+      "token": "s%3A...your_token_here...",
+      "proxy": {
+        "enabled": true,
+        "host": "proxy.example.com",
+        "port": 8080,
+        "username": "",
+        "password": ""
+      }
+    },
+    {
+      "name": "Account 3",
+      "token": "s%3A...your_token_here...",
+      "proxy": {
+        "enabled": true,
+        "host": "proxy2.example.com",
+        "port": 3128,
+        "username": "proxyuser",
+        "password": "proxypass"
+      }
+    }
+  ],
+  "settings": {
+    "heartbeatInterval": 30000,
+    "dashboardUpdateInterval": 60000,
+    "retryDelay": 10000,
+    "startDelay": 3000,
+    "autoActivateBooster": true,
+    "autoClaimDaily": true
+  }
+}

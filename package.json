@@ -1,0 +1,28 @@
+{
+  "name": "deltahash-mining-bot",
+  "version": "1.0.0",
+  "description": "DeltaHash Multi-Account Mining Bot with Proxy Support - by WINSNIP",
+  "main": "deltahash_pro.cjs",
+  "scripts": {
+    "start": "node deltahash_pro.cjs",
+    "install-deps": "npm install axios ws https-proxy-agent"
+  },
+  "keywords": [
+    "deltahash",
+    "mining",
+    "bot",
+    "crypto",
+    "automation",
+    "winsnip"
+  ],
+  "author": "WINSNIP",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "ws": "^8.16.0",
+    "https-proxy-agent": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
