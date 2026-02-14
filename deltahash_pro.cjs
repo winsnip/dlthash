@@ -128,7 +128,7 @@ class DeltaHashMiner {
   getAxiosConfig() {
     const config = {
       headers: this.getHeaders(),
-      timeout: 15000
+      timeout: 30000
     };
     
     if (this.proxyAgent) {
@@ -197,7 +197,6 @@ class DeltaHashMiner {
       }
       return null;
     } catch (error) {
-      this.log('error', `Failed to get mining status: ${error.message}`);
       return null;
     }
   }
@@ -440,7 +439,7 @@ class DeltaHashMiner {
 
     const userInfoSuccess = await this.getUserInfo();
     if (!userInfoSuccess) {
-      this.log('error', 'Failed to retrieve user info. Retrying in 10s...');
+      this.log('error', 'Failed to retrieve user info. Check your token!');
       await delay(settings.retryDelay || 10000);
       return this.startMining(settings);
     }
@@ -448,17 +447,9 @@ class DeltaHashMiner {
     await delay(1000);
 
     await this.claimDailyBonus();
-    await delay(500);
+    await delay(1000);
 
-    const status = await this.getMiningStatus();
-    if (status) {
-      this.log('info', 
-        `Mining config ${colors.gray}→${colors.reset} ` +
-        `Speed: ${colors.yellow}${status.miningSpeed}${colors.reset} ` +
-        `${colors.gray}•${colors.reset} ` +
-        `Multiplier: ${colors.green}${status.multiplier}x${colors.reset}`
-      );
-    }
+    await this.getMiningStatus();
 
     const boosters = await this.getBoostersInfo();
     if (boosters && boosters.available && boosters.available.length > 0) {
@@ -470,16 +461,16 @@ class DeltaHashMiner {
       }
     }
 
-    await delay(1000);
+    await delay(1500);
 
     const connectSuccess = await this.connectMining();
     if (!connectSuccess) {
-      this.log('error', 'Failed to connect mining. Retrying in 10s...');
-      await delay(settings.retryDelay || 10000);
+      this.log('error', 'Failed to connect mining. Retrying in 15s...');
+      await delay(15000);
       return this.startMining(settings);
     }
 
-    await delay(1000);
+    await delay(1500);
 
     this.startHeartbeat(settings.heartbeatInterval || 30000);
     this.connectWebSocket();
