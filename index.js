@@ -15,31 +15,37 @@ const logger = {
   success: (msg) => console.log(`${colors.green}[✅] ${msg}${colors.reset}`),
   loading: (msg) => console.log(`${colors.cyan}[→] ${msg}${colors.reset}`),
 
-  // 🔥 BANNER BARU
   banner: () => {
     console.log(`${colors.cyan}${colors.bold}`);
-    console.log(`██     ██ ██ ███    ██ ███████ ███    ██ ██ ██████  `);
-    console.log(`██     ██ ██ ████   ██ ██      ████   ██ ██ ██   ██ `);
-    console.log(`██  █  ██ ██ ██ ██  ██ ███████ ██ ██  ██ ██ ██████  `);
-    console.log(`██ ███ ██ ██ ██  ██ ██      ██ ██  ██ ██ ██ ██      `);
-    console.log(` ███ ███  ██ ██   ████ ███████ ██   ████ ██ ██      `);
+    console.log(`██     ██ ██ ███    ██ ███████ ███    ██ ██ ██████`);
+    console.log(`██     ██ ██ ████   ██ ██      ████   ██ ██ ██   ██`);
+    console.log(`██  █  ██ ██ ██ ██  ██ ███████ ██ ██  ██ ██ ██████`);
+    console.log(`██ ███ ██ ██ ██  ██ ██      ██ ██  ██ ██ ██ ██`);
+    console.log(` ███ ███  ██ ██   ████ ███████ ██   ████ ██ ██`);
     console.log(`${colors.reset}`);
     console.log(`${colors.yellow}Join our Telegram channel: https://t.me/winsnip${colors.reset}\n`);
   }
 };
 
+/* =========================
+   DESKTOP USER AGENTS ONLY
+========================= */
+
 const USER_AGENTS = [
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0"
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0",
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
 ];
 
-const getRandomUserAgent = () => USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+const getRandomUserAgent = () =>
+  USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 class DeltaHashMiner {
-  constructor(token, accountIndex) {
-    this.token = token.trim();
+  constructor(cookieString, accountIndex) {
+    this.cookie = cookieString.trim(); // FULL COOKIE
     this.accountIndex = accountIndex;
     this.baseURL = 'https://portal.deltahash.ai/api';
     this.wsURL = 'wss://portal.deltahash.ai/ws';
@@ -58,7 +64,7 @@ class DeltaHashMiner {
       'origin': 'https://portal.deltahash.ai',
       'referer': 'https://portal.deltahash.ai/',
       'user-agent': this.userAgent,
-      'cookie': `connect.sid=${this.token}`
+      'cookie': this.cookie // 🔥 FIXED
     };
   }
 
@@ -127,25 +133,11 @@ class DeltaHashMiner {
     }
   }
 
-  async disconnectMining() {
-    try {
-      await axios.post(
-        `${this.baseURL}/mining/disconnect`,
-        {},
-        { headers: this.getHeaders() }
-      );
-      this.isMining = false;
-      logger.info(`[Account ${this.accountIndex}] Mining disconnected`);
-    } catch (error) {
-      logger.error(`[Account ${this.accountIndex}] Failed to disconnect mining`);
-    }
-  }
-
   async sendHeartbeat() {
     try {
       const response = await axios.post(
         `${this.baseURL}/mining/heartbeat`,
-        {},   // wajib object kosong
+        {},
         { headers: this.getHeaders() }
       );
 
@@ -177,7 +169,7 @@ class DeltaHashMiner {
   connectWebSocket() {
     this.ws = new WebSocket(this.wsURL, {
       headers: {
-        'cookie': `connect.sid=${this.token}`,
+        'cookie': this.cookie, // 🔥 FIXED
         'user-agent': this.userAgent
       }
     });
@@ -205,13 +197,6 @@ class DeltaHashMiner {
 
     await delay(1000);
 
-    const status = await this.getMiningStatus();
-    if (status) {
-      logger.info(`[Account ${this.accountIndex}] Current mining speed: ${status.miningSpeed} | Multiplier: ${status.multiplier}x`);
-    }
-
-    await delay(1000);
-
     if (!(await this.connectMining())) {
       logger.error(`[Account ${this.accountIndex}] Retry in 10s...`);
       await delay(10000);
@@ -223,39 +208,28 @@ class DeltaHashMiner {
 
     logger.success(`[Account ${this.accountIndex}] Mining started successfully!`);
   }
-
-  async stopMining() {
-    if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
-    if (this.ws) this.ws.close();
-    await this.disconnectMining();
-  }
 }
 
 async function main() {
   logger.banner();
 
-  const tokens = [];
+  const cookies = [];
   let i = 1;
 
-  // 🔥 ambil dari COOK_ bukan TOKEN_
   while (process.env[`COOK_${i}`]) {
-    let token = process.env[`COOK_${i}`].trim();
-    if (token.startsWith('connect.sid=')) {
-      token = token.replace('connect.sid=', '');
-    }
-    tokens.push(token);
+    cookies.push(process.env[`COOK_${i}`].trim()); // 🔥 FULL COOKIE
     i++;
   }
 
-  if (!tokens.length) {
+  if (!cookies.length) {
     logger.error('No cookies found!');
     process.exit(1);
   }
 
-  logger.success(`Found ${tokens.length} account(s) to mine`);
+  logger.success(`Found ${cookies.length} account(s) to mine`);
 
-  for (let i = 0; i < tokens.length; i++) {
-    const miner = new DeltaHashMiner(tokens[i], i + 1);
+  for (let i = 0; i < cookies.length; i++) {
+    const miner = new DeltaHashMiner(cookies[i], i + 1);
     await miner.startMining();
     await delay(2000);
   }
